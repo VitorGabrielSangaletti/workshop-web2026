@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>ModoOn</title>
+  
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons & Tone.js (Áudios) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <!-- Estilos Customizados -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="relative flex flex-col min-h-screen text-slate-100 bg-slate-950" id="appBody">
+  <!-- Película de Fundo Escuro -->
+  <div id="bgOverlay" class="fixed inset-0 z-0 bg-slate-950/85 transition-colors pointer-events-none"></div>
+
+  <!-- CABEÇALHO -->
+  <header class="relative z-20 w-full px-4 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 glass-panel">
+    <div class="flex items-center gap-3">
+      <div id="brandIconWrapper" class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-lg transition-colors" style="background-color: var(--primary);">
+        <i id="brandIcon" class="fa-solid fa-cubes-stacked"></i>
+      </div>
+      <div>
+        <h1 id="appTitleText" class="text-lg sm:text-xl font-black text-white tracking-tight">StudyHub: Dev Edition</h1>
+        <p id="appSubtitleText" class="text-xs text-slate-300">Workspace de Foco & Engenharia de Software</p>
+      </div>
+    </div>
+
+    <!-- Presets de Temas e Botão de Configurações -->
+    <div class="flex items-center flex-wrap gap-2.5">
+      <div class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 shadow-inner">
+        <span class="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider hidden sm:inline">Tema:</span>
+        <button onclick="applyPreset('cyberpunk')" class="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-white/10 transition text-fuchsia-400">Cyberpunk</button>
+        <button onclick="applyPreset('lofi')" class="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-white/10 transition text-sky-400">Lo-Fi</button>
+        <button onclick="applyPreset('retroGaming')" class="px-2.5 py-1 text-xs font-semibold rounded-lg hover:bg-white/10 transition text-emerald-400">Games</button>
+      </div>
+
+      <button onclick="openConfigModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-white transition hover:brightness-110 active:scale-95 shadow-md" style="background-color: var(--primary);">
+        <i class="fa-solid fa-code"></i>
+        <span>Editar no Painel</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ÁREA DE TRABALHO PRINCIPAL -->
+  <main id="mainWorkspace" class="relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-8 py-5 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    
+    <!-- COLUNA ESQUERDA: Sidebar (Pomodoro & Spotify) -->
+    <section class="lg:col-span-4 xl:col-span-3 flex flex-col gap-4 w-full">
+      
+      <!-- Card Cronômetro Pomodoro -->
+      <div class="glass-panel rounded-2xl p-4 flex flex-col items-center text-center relative shadow-lg">
+        <div class="w-full flex items-center justify-between mb-1">
+          <span id="timerModeLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-hourglass-half text-amber-400"></i> Modo Foco
+          </span>
+          <span id="pomodoroCycleBadge" class="text-[10px] font-code bg-white/10 px-2 py-0.5 rounded-full text-slate-300">
+            Pro
+          </span>
+        </div>
+
+        <!-- Anel Circular SVG do Pomodoro -->
+        <div class="relative w-28 h-28 flex items-center justify-center my-1">
+          <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="transparent" />
+            <circle id="timerProgressRing" cx="50" cy="50" r="44" stroke="var(--primary)" stroke-width="6" fill="transparent" stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000" />
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="timerDisplay" class="text-2xl font-extrabold font-code tracking-tight text-white drop-shadow">25:00</span>
+            <span id="timerStatusSub" class="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Pronto</span>
+          </div>
+        </div>
+
+        <!-- Controles do Pomodoro -->
+        <div class="flex items-center gap-2 mt-1">
+          <button id="timerToggleBtn" onclick="toggleTimer()" class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold shadow-md transition hover:scale-105 active:scale-95" style="background-color: var(--primary);" title="Iniciar Modo Foco">
+            <i id="timerToggleIcon" class="fa-solid fa-play ml-0.5"></i>
+          </button>
+          <button onclick="resetTimer()" class="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-white/10 text-slate-300 flex items-center justify-center text-xs transition" title="Reiniciar Cronômetro">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+          <button onclick="switchTimerMode()" class="px-2.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-white/10 text-[11px] font-semibold text-slate-300 flex items-center gap-1 transition" title="Alternar entre foco e pausa">
+            <i class="fa-solid fa-mug-hot text-amber-400"></i>
+            <span>Pausa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card Spotify Compacto -->
+      <div class="glass-panel rounded-2xl p-3.5 flex flex-col gap-2.5 shadow-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fa-brands fa-spotify text-emerald-400 text-base"></i>
+            <div>
+              <h3 class="text-xs font-bold text-white leading-tight">Spotify</h3>
+              <p class="text-[9px] text-slate-400">Trilha Sonora</p>
+            </div>
+          </div>
+          <span id="spotifyStatusBadge" class="text-[9px] font-code px-1.5 py-0.5 rounded font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+            <i class="fa-solid fa-lock text-[8px]"></i> 30s
+          </span>
+        </div>
+
+        <!-- Banner de Conexão com Conta -->
+        <div id="spotifyAuthCard" class="p-2 rounded-xl bg-slate-900/90 border border-emerald-500/20 flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-semibold text-emerald-300 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Músicas completas
+            </span>
+            <button onclick="dismissAuthNotice()" class="text-slate-400 hover:text-white text-[10px]">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="loginSpotifyWindow()" class="flex-1 px-2 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[10px] flex items-center justify-center gap-1 transition">
+              <i class="fa-brands fa-spotify text-xs"></i> Entrar
+            </button>
+            <button onclick="confirmSpotifyLogin()" class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-medium text-[10px] transition">
+              Já Conectei
+            </button>
+          </div>
+        </div>
+
+        <!-- Iframe Embed Oficial do Spotify -->
+        <div class="w-full rounded-xl overflow-hidden shadow-inner bg-black/50 border border-white/5">
+          <iframe 
+            id="spotifyEmbedIframe"
+            style="border-radius:10px;" 
+            src="https://open.spotify.com/embed/playlist/4KTv1FIi54gppwh8XuADRv?utm_source=generator&theme=0" 
+            width="100%" 
+            height="152" 
+            frameBorder="0" 
+            allowfullscreen="" 
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+            loading="lazy">
+          </iframe>
+        </div>
+
+        <div class="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+          <span>Controles integrados</span>
+          <button onclick="reloadSpotifyEmbed()" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+            <i class="fa-solid fa-arrow-rotate-right text-[9px]"></i> Atualizar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUNA DIREITA: Quadro Kanban em Destaque -->
+    <section class="lg:col-span-8 xl:col-span-9 flex flex-col gap-4 w-full">
+      <div class="glass-panel rounded-3xl p-5 sm:p-6 flex flex-col gap-4 shadow-xl border border-white/15">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-base font-bold shadow-inner">
+              <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white leading-none">Quadro de Tarefas</h2>
+              <p class="text-xs text-slate-400 mt-1">Gerencie as tarefas e estudos com estilo</p>
+            </div>
+          </div>
+          <button onclick="openAddTaskModal()" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition active:scale-95 shadow-lg hover:brightness-110" style="background-color: var(--primary);">
+            <i class="fa-solid fa-plus"></i>
+            <span>Nova Tarefa</span>
+          </button>
+        </div>
+
+        <!-- 3 Colunas Kanban -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          
+          <!-- Coluna: A Fazer -->
+          <div class="bg-slate-900/75 rounded-2xl p-3.5 border border-white/5 flex flex-col min-h-[460px] shadow-inner">
+            <div class="flex items-center justify-between px-1.5 py-1 mb-2.5 border-b border-white/5">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span> A Fazer
+              </span>
+              <span id="count-todo" class="text-xs font-code bg-white/10 px-2 py-0.5 rounded-full text-slate-300">0</span>
+            </div>
+            <div id="col-todo" class="flex-1 flex flex-col gap-2.5 custom-scroll overflow-y-auto max-h-[580px]"></div>
+          </div>
+
+          <!-- Coluna: Em Andamento -->
+          <div class="bg-slate-900/75 rounded-2xl p-3.5 border border-white/5 flex flex-col min-h-[460px] shadow-inner">
+            <div class="flex items-center justify-between px-1.5 py-1 mb-2.5 border-b border-white/5">
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span> Em Andamento
+              </span>
+              <span id="count-doing" class="text-xs font-code bg-white/10 px-2 py-0.5 rounded-full text-slate-300">0</span>
+            </div>
+            <div id="col-doing" class="flex-1 flex flex-col gap-2.5 custom-scroll overflow-y-auto max-h-[580px]"></div>
+          </div>
+
+          <!-- Coluna: Concluído -->
+          <div class="bg-slate-900/75 rounded-2xl p-3.5 border border-white/5 flex flex-col min-h-[460px] shadow-inner">
+            <div class="flex items-center justify-between px-1.5 py-1 mb-2.5 border-b border-white/5">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Concluído
+              </span>
+              <span id="count-done" class="text-xs font-code bg-white/10 px-2 py-0.5 rounded-full text-slate-300">0</span>
+            </div>
+            <div id="col-done" class="flex-1 flex flex-col gap-2.5 custom-scroll overflow-y-auto max-h-[580px]"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- RODAPÉ MINIMALISTA -->
+  <footer class="relative z-10 w-full py-4 mt-auto border-t border-white/5 backdrop-blur-md bg-slate-950/40 text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300 font-medium tracking-wide">Engenharia de Software UniSatc</span>
+      </div>
+      <div class="flex items-center gap-2 text-slate-400 text-[11px] sm:text-xs">
+        <span>Desenvolvido por</span>
+        <span id="footerAuthor" class="text-white font-semibold tracking-wide">Hyan & Ramon</span>
+        <span class="text-slate-600">•</span>
+        <span id="footerDate" class="text-slate-300 font-code font-medium">Setembro, 2026</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =====================================================================
+       MODO FOCO IMERSIVO (Pexels Video Nativo em Loop)
+       ===================================================================== -->
+  <div id="immersiveFocusScreen" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center hidden">
+    <video 
+      id="immersiveFocusVideo" 
+      class="absolute inset-0 w-full h-full object-cover opacity-80 filter brightness-90 contrast-105 pointer-events-none" 
+      autoplay 
+      loop 
+      muted 
+      playsinline
+      preload="auto">
+      <source id="immersiveVideoSource" src="https://www.pexels.com/pt-br/download/video/28615179/" type="video/mp4">
+    </video>
+    
+    <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-[0.5px] pointer-events-none"></div>
+
+    <div class="relative z-10 flex flex-col items-center text-center px-6 max-w-md w-full pointer-events-auto">
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-widest text-violet-300 mb-3 backdrop-blur-md">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+        <span id="immersiveCycleBadge">Modo Foco Ativo</span>
+      </div>
+
+      <div class="relative w-56 h-56 flex items-center justify-center my-2">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.15)" stroke-width="5" fill="transparent" />
+          <circle id="immersiveProgressRing" cx="50" cy="50" r="44" stroke="var(--primary)" stroke-width="5" fill="transparent" stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000" />
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span id="immersiveTimerDisplay" class="text-5xl font-black font-code text-white drop-shadow-2xl">25:00</span>
+          <span class="text-xs font-medium text-slate-300 mt-2 tracking-widest uppercase">Mantenha o Foco</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 mt-4">
+        <button onclick="toggleTimer()" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs uppercase tracking-wider transition shadow-lg active:scale-95">
+          <i id="immersiveToggleIcon" class="fa-solid fa-pause"></i>
+          <span id="immersiveToggleText">Pausar</span>
+        </button>
+        <button onclick="cancelImmersiveFocus()" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900/85 hover:bg-slate-800 border border-white/20 text-white font-semibold text-xs uppercase tracking-wider transition backdrop-blur-md active:scale-95">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Voltar as Tarefas</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURAÇÃO (PAINEL VISUAL) -->
+  <div id="configModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-2xl rounded-3xl border border-white/20 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="p-4 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-code text-violet-400"></i>
+          <h2 class="font-bold text-sm text-white">Editar Parâmetros do Produto</h2>
+        </div>
+        <button onclick="closeConfigModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto custom-scroll flex flex-col gap-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Título da Aplicação</label>
+            <input id="cfgAppTitle" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-violet-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Subtítulo</label>
+            <input id="cfgAppSubtitle" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-violet-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Cor Primária (Hex)</label>
+            <div class="flex items-center gap-2">
+              <input id="cfgPrimaryColor" type="color" class="w-10 h-9 rounded-lg bg-transparent border-0 cursor-pointer">
+              <input id="cfgPrimaryColorHex" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white font-code outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Ícone FontAwesome</label>
+            <input id="cfgBrandIcon" type="text" placeholder="fa-cubes-stacked" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white font-code outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Playlist do Spotify (URL)</label>
+          <input id="cfgSpotifyUrl" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white font-code outline-none focus:border-violet-500">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Vídeo Imersivo (MP4 / Pexels)</label>
+          <input id="cfgVideoUrl" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white font-code outline-none focus:border-violet-500">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Imagem de Fundo (URL)</label>
+          <input id="cfgBgImage" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white font-code outline-none focus:border-violet-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Desenvolvido Por (Autor)</label>
+            <input id="cfgAuthor" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-violet-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Data da Entrega</label>
+            <input id="cfgDate" type="text" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-violet-500">
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-white/10 flex items-center justify-end gap-2.5">
+        <button onclick="closeConfigModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 font-semibold transition">Cancelar</button>
+        <button onclick="saveAndApplyConfig()" class="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg transition">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ADICIONAR TAREFA -->
+  <div id="addTaskModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-md rounded-3xl border border-white/20 shadow-2xl p-5 flex flex-col gap-4">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <h3 class="font-bold text-sm text-white">Adicionar Nova Tarefa</h3>
+        <button onclick="closeAddTaskModal()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Título da Tarefa</label>
+        <input id="taskTextInput" type="text" placeholder="Ex: Criar apresentação de pitch" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-violet-500">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Categoria / Tag</label>
+        <input id="taskTagInput" type="text" placeholder="Ex: Engenharia, Negócio, Design" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-violet-500">
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeAddTaskModal()" class="px-3 py-1.5 rounded-lg bg-white/10 text-slate-300 text-xs">Cancelar</button>
+        <button onclick="confirmAddTask()" class="px-4 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold shadow-md">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script da Aplicação -->
+  <script src="script.js"></script>
+</body>
+</html>

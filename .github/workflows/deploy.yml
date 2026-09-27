@@ -1,0 +1,65 @@
+name: Build e Publicacao (CI/CD)
+
+# Dispara a cada push na main (e permite rodar manualmente pela aba Actions)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissões necessárias para publicar no GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Garante que só um deploy rode por vez
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # CI: constrói o produto (gera o app.html de arquivo único)
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build (CI)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Empacotar em arquivo unico (app.html)
+        run: npx --yes html-inline-external --src index.html --dest app.html
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Montar pasta do site
+        run: |
+          mkdir -p dist
+          cp index.html styles.css script.js app.html dist/
+
+      - name: Enviar artefato do site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  # ---------------------------------------------------------------------------
+  # CD: publica o site no GitHub Pages
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy (CD)
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

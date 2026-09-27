@@ -1,0 +1,15 @@
+# Dependências (não são usadas localmente — o build roda no CI)
+node_modules/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.log
+
+# Artefato de build: gerado automaticamente pelo CI (veja .github/workflows/deploy.yml).
+# Não versionamos o app.html — só o código-fonte.
+app.html
