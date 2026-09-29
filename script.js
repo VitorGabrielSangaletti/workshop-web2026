@@ -4,7 +4,7 @@ Altere os valores entre as aspas para personalizar a sua aplicação!
 ========================================================================== */
 const APP_CONFIG = {
   // 1. Nome e Subtítulo do Produto do seu Squad
-  appTitle: "ModOn",
+  appTitle: "alala",
   appSubtitle: "Foco & Produtividade",
   
   // 2. Ícone da Marca (Escolha no FontAwesome (https://fontawesome.com/): fa-gamepad, fa-mug-hot, fa-vr-cardboard, etc)
